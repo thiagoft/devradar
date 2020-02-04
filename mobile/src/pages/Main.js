@@ -15,10 +15,16 @@ import {
 import { MaterialIcons } from "@expo/vector-icons";
 
 import api from "../services/api";
+import socket, {
+  connect,
+  disconnect,
+  subscribeToNewDevs
+} from "../services/socket";
 
 export default function Main({ navigation }) {
   const [currentRegion, setCurrentRegion] = useState(null);
   const [devs, setDevs] = useState([]);
+  const [techs, setTechs] = useState("");
 
   useEffect(() => {
     async function loadInitialPosition() {
@@ -31,9 +37,11 @@ export default function Main({ navigation }) {
 
         const { latitude, longitude } = coords;
 
+        console.log(coords);
+
         setCurrentRegion({
-          latitude,
-          longitude,
+          latitude: -21.2206453,
+          longitude: -50.4109575,
           latitudeDelta: 0.01,
           longitudeDelta: 0.01
         });
@@ -43,6 +51,18 @@ export default function Main({ navigation }) {
     loadInitialPosition();
   }, []);
 
+  useEffect(() => {
+    subscribeToNewDevs(dev => setDevs([...devs, dev]));
+  }, [devs]);
+
+  function setupWebsocket() {
+    disconnect();
+
+    const { latitude, longitude } = currentRegion;
+
+    connect(latitude, longitude, techs);
+  }
+
   async function loadDevs() {
     const { latitude, longitude } = currentRegion;
 
@@ -50,9 +70,12 @@ export default function Main({ navigation }) {
       params: {
         latitude,
         longitude,
-        techs: "ReactJS"
+        techs
       }
     });
+
+    setDevs(response.data.devs);
+    setupWebsocket();
   }
 
   function handleRegionChanged(region) {
@@ -109,6 +132,8 @@ export default function Main({ navigation }) {
           placeholderTextColor="#999"
           autoCapitalize="words"
           autoCorrect={false}
+          value={techs}
+          onChangeText={text => setTechs(text)}
         />
         <TouchableOpacity style={styles.loadButton} onPress={loadDevs}>
           <MaterialIcons name="my-location" size={20} color="#FFF" />

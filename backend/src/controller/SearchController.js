@@ -7,8 +7,6 @@ module.exports = {
 
     const techsArray = parseStringAsArray(techs);
 
-    console.log(latitude, longitude, techsArray);
-
     const devs = await Dev.find({
       techs: {
         $in: techsArray //$in returns devs within techs' array
